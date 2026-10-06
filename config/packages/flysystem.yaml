@@ -1,0 +1,6 @@
+flysystem:
+    storages:
+        dateien.storage:
+            adapter: 'local'
+            options:
+                directory: '%app.dateien_verzeichnis%'

@@ -1,0 +1,15 @@
+#!/bin/bash
+# docker compose für studio-kit – setzt den Datenpfad und verweigert den Start bei gesperrtem Privat-Volume.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+export STUDIO_KIT_DATEN_HOST="${STUDIO_KIT_DATEN_HOST:-/Volumes/Privat/studio-kit-daten}"
+volume_root="$(dirname "$STUDIO_KIT_DATEN_HOST")"
+
+if [ ! -d "$volume_root" ]; then
+    echo "studio-kit: $volume_root ist nicht da – Privat gesperrt? Erst 'privat-auf'." >&2
+    exit 1
+fi
+mkdir -p "$STUDIO_KIT_DATEN_HOST/dateien" "$STUDIO_KIT_DATEN_HOST/postgres"
+
+exec docker compose "$@"

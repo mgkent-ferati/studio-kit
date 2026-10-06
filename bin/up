@@ -1,0 +1,6 @@
+#!/bin/bash
+# Baut und startet studio-kit.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+bin/dc up -d --build
+echo "studio-kit läuft: http://localhost:8090"
