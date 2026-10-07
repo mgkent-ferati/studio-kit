@@ -13,6 +13,7 @@ use App\Mappe\Entity\Mappe;
 use App\Mappe\Repository\MappeRepository;
 use App\Musik\MediaInfo;
 use App\Musik\MediaProbe;
+use App\Musik\MusikUnterleger;
 use App\Tests\Support\StudioKitWebTestCase;
 use App\Tests\Support\TestMedia;
 use Doctrine\ORM\EntityManagerInterface;
@@ -78,6 +79,65 @@ final class MusikUnterlegenTest extends StudioKitWebTestCase
 
         self::assertSelectorTextContains('.ergebnis', 'Zum Musikunterlegen braucht die Mappe ein Video als Ergebnis');
         self::assertCount(0, $crawler->selectButton('Musik unterlegen'));
+    }
+
+    public function testUngueltigeZahlLegtKeineFassungAn(): void
+    {
+        $mappe = $this->mappeMit(TestMedia::video(2.0, true, 'libx264'));
+        $form = $this->client->request('GET', '/mappen/'.$mappe->getId())->selectButton('Musik unterlegen')->form();
+        $form['lautstaerke'] = 'abc';
+
+        $this->client->submit($form);
+
+        self::assertContains('Lautstärke und Startposition müssen Zahlen sein.', $this->flashes());
+        self::assertSame(1, $this->ergebnis($mappe)->aktuelleFassung()?->getNummer());
+    }
+
+    public function testDezimalkommaWirdAkzeptiert(): void
+    {
+        self::assertSame(1.5, MusikUnterleger::zahl('1,5'));
+    }
+
+    public function testFremdeAudioDateiWirdAbgelehnt(): void
+    {
+        $mappe = $this->mappeMit(TestMedia::video(2.0, true, 'libx264'));
+        $fremd = self::service(DateiManager::class)->hochladen(new File(TestMedia::audio(4.0)), 'fremd.mp3');
+        $form = $this->client->request('GET', '/mappen/'.$mappe->getId())->selectButton('Musik unterlegen')->form();
+        $form['audio_id']->disableValidation();
+        $form['audio_id'] = (string) $fremd->getId();
+
+        $this->client->submit($form);
+
+        self::assertContains('Bitte einen Audio-Bestandteil dieser Mappe wählen.', $this->flashes());
+        self::assertSame(1, $this->ergebnis($mappe)->aktuelleFassung()?->getNummer());
+    }
+
+    public function testVideoMitUnlesbarerLaengeLegtKeineFassungAn(): void
+    {
+        $mappe = $this->mappeMit(TestMedia::datei('kaputt.mp4', 'kein video'));
+        $form = $this->client->request('GET', '/mappen/'.$mappe->getId())->selectButton('Musik unterlegen')->form();
+
+        $this->client->submit($form);
+
+        self::assertContains('Länge des Videos nicht lesbar.', $this->flashes());
+        self::assertSame(1, $this->ergebnis($mappe)->aktuelleFassung()?->getNummer());
+    }
+
+    public function testFfmpegFehlerHinterlaesstKeineTempDatei(): void
+    {
+        $mappe = $this->mappeMit(TestMedia::video(2.0, true, 'libx264'));
+        $kaputt = self::service(DateiManager::class)->hochladen(new File(TestMedia::datei('kaputt.mp3', 'kein audio')), 'kaputt.mp3');
+        $mappe->bestandteilHinzufuegen($kaputt);
+        self::service(EntityManagerInterface::class)->flush();
+        $form = $this->client->request('GET', '/mappen/'.$mappe->getId())->selectButton('Musik unterlegen')->form();
+        $form['audio_id']->select((string) $kaputt->getId());
+        $vorher = glob(sys_get_temp_dir().'/musik*') ?: [];
+
+        $this->client->submit($form);
+
+        self::assertNotEmpty(array_filter($this->flashes(), static fn (string $f): bool => str_contains($f, 'ffmpeg ist fehlgeschlagen')));
+        self::assertSame($vorher, glob(sys_get_temp_dir().'/musik*') ?: []);
+        self::assertSame(1, $this->ergebnis($mappe)->aktuelleFassung()?->getNummer());
     }
 
     private function mappeMit(string $video): Mappe

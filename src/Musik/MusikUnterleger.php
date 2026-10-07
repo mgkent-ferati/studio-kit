@@ -27,12 +27,30 @@ final readonly class MusikUnterleger
     ) {
     }
 
+    /** Akzeptiert auch das deutsche Dezimalkomma ("1,5"). */
+    public static function zahl(string $eingabe): float
+    {
+        $wert = str_replace(',', '.', trim($eingabe));
+        if (!is_numeric($wert) || !is_finite((float) $wert)) {
+            throw new MusikUnterlegenFehlgeschlagen('Lautstärke und Startposition müssen Zahlen sein.');
+        }
+
+        return (float) $wert;
+    }
+
     public function unterlegen(Mappe $mappe, Datei $audio, float $lautstaerke, float $startSekunde, bool $originalBehalten): Fassung
     {
         $ergebnis = $mappe->getErgebnis();
         $video = $ergebnis?->aktuelleFassung();
         if (null === $ergebnis || null === $video || DateiTyp::Video !== $ergebnis->getTyp()) {
             throw new MusikUnterlegenFehlgeschlagen('Die Mappe hat noch kein Video als Ergebnis.');
+        }
+        $gehoert = false;
+        foreach ($mappe->getBestandteile() as $bestandteil) {
+            $gehoert = $gehoert || $bestandteil->getDatei() === $audio;
+        }
+        if (!$gehoert) {
+            throw new MusikUnterlegenFehlgeschlagen('Bitte einen Audio-Bestandteil dieser Mappe wählen.');
         }
         $ton = $audio->aktuelleFassung();
         if (null === $ton || DateiTyp::Audio !== $audio->getTyp()) {

@@ -246,8 +246,8 @@ final class MappeController extends AbstractController
             $fassung = $this->musikUnterleger->unterlegen(
                 $mappe,
                 $audio,
-                (float) $payload->getString('lautstaerke', '1'),
-                (float) $payload->getString('start', '0'),
+                MusikUnterleger::zahl($payload->getString('lautstaerke', '1')),
+                MusikUnterleger::zahl($payload->getString('start', '0')),
                 $payload->getBoolean('original'),
             );
             $this->addFlash('erfolg', sprintf('Musik unterlegt – Ergebnis Fassung %d.', $fassung->getNummer()));
