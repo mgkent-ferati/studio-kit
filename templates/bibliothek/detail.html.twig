@@ -48,7 +48,7 @@
 
     <h2>Verwendet in</h2>
     {% for mappe in mappen %}
-        {{ mappe.name }}{{ not loop.last ? ', ' }}
+        <a href="{{ path('mappe_detail', {id: mappe.id}) }}">{{ mappe.name }}</a>{{ not loop.last ? ', ' }}
     {% else %}
         <p>In keiner Mappe.</p>
     {% endfor %}
@@ -61,11 +61,6 @@
 
 {% block scripts %}
     {% if datei.typ.value == 'rive' %}
-        <script src="https://unpkg.com/@rive-app/canvas@2"></script>
-        <script>
-            document.querySelectorAll('canvas.rive-vorschau').forEach((canvas) => {
-                const r = new rive.Rive({ src: canvas.dataset.src, canvas, autoplay: true, onLoad: () => r.resizeDrawingSurfaceToCanvas() });
-            });
-        </script>
+        {% include '_rive_script.html.twig' %}
     {% endif %}
 {% endblock %}

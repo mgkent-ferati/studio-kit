@@ -1,0 +1,6 @@
+<script src="https://unpkg.com/@rive-app/canvas@2"></script>
+<script>
+    document.querySelectorAll('canvas.rive-vorschau').forEach((canvas) => {
+        const r = new rive.Rive({ src: canvas.dataset.src, canvas, autoplay: true, onLoad: () => r.resizeDrawingSurfaceToCanvas() });
+    });
+</script>

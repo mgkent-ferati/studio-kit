@@ -35,7 +35,7 @@
 <body>
 <nav>
     <a href="{{ path('bibliothek_index') }}">Bibliothek</a>
-    {% block nav_extra %}{% endblock %}
+    <a href="{{ path('mappe_index') }}">Mappen</a>
 </nav>
 <main>
     {% for typ, meldungen in app.flashes %}

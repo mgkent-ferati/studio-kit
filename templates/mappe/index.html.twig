@@ -1,0 +1,42 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mappen – studio-kit{% endblock %}
+
+{% block body %}
+    <form method="post" action="{{ path('mappe_anlegen') }}" class="zeile">
+        <input type="hidden" name="_token" value="{{ csrf_token('mappe-anlegen') }}">
+        <input name="name" placeholder="Name der neuen Mappe" required maxlength="255">
+        <button type="submit">Mappe anlegen</button>
+    </form>
+
+    <form method="get" class="zeile">
+        <input type="search" name="q" value="{{ filter.q }}" placeholder="Name suchen">
+        <select name="schlagwort">
+            <option value="">Alle Schlagwörter</option>
+            {% for schlagwort in alleSchlagwoerter %}
+                <option value="{{ schlagwort.name }}" {{ filter.schlagwort == schlagwort.name ? 'selected' }}>{{ schlagwort.name }}</option>
+            {% endfor %}
+        </select>
+        <select name="vorlage">
+            <option value="">Vorlage egal</option>
+            <option value="1" {{ filter.vorlage == '1' ? 'selected' }}>nur Vorlagen</option>
+            <option value="0" {{ filter.vorlage == '0' ? 'selected' }}>keine Vorlagen</option>
+        </select>
+        <button type="submit">Filtern</button>
+    </form>
+
+    <table>
+        {% for mappe in mappen %}
+            <tr class="mappe">
+                <td><a href="{{ path('mappe_detail', {id: mappe.id}) }}">{{ mappe.name }}</a>
+                    {% if mappe.vorlage %}<span class="marke">Vorlage</span>{% endif %}</td>
+                <td>{{ mappe.bestandteile|length }} Bestandteile</td>
+                <td>{{ mappe.ergebnis ? 'Ergebnis: Fassung ' ~ mappe.ergebnis.aktuelleFassung.nummer : 'noch kein Ergebnis' }}</td>
+                <td>{% for schlagwort in mappe.schlagwoerter %}<span class="marke">{{ schlagwort.name }}</span>{% endfor %}</td>
+                <td>{{ mappe.geaendertAm|date('d.m.Y H:i') }}</td>
+            </tr>
+        {% else %}
+            <tr><td>Noch keine Mappen.</td></tr>
+        {% endfor %}
+    </table>
+{% endblock %}
