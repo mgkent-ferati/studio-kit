@@ -84,11 +84,17 @@ final readonly class DateiManager
             $quelleVideo,
             $quelleAudio,
         );
-        $this->storage->speichern($fassung, $file->getPathname());
+        try {
+            $this->storage->speichern($fassung, $file->getPathname());
+        } catch (\Throwable $e) {
+            $datei->fassungVerwerfen($fassung);
+            throw $e;
+        }
         try {
             $this->em->persist($datei);
             $this->em->flush();
         } catch (\Throwable $e) {
+            $datei->fassungVerwerfen($fassung);
             $this->storage->entfernen($fassung);
             throw $e;
         }

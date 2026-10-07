@@ -32,12 +32,19 @@ final readonly class FassungStorage
         $teil = $fassung->getPfad().'.part';
         try {
             $this->dateienStorage->writeStream($teil, $stream);
+            $this->dateienStorage->move($teil, $fassung->getPfad());
+        } catch (\Throwable $e) {
+            try {
+                $this->dateienStorage->delete($teil);
+            } catch (\Throwable) {
+                // Aufräumen nach bestem Wissen; der ursprüngliche Fehler zählt.
+            }
+            throw $e;
         } finally {
             if (is_resource($stream)) {
                 fclose($stream);
             }
         }
-        $this->dateienStorage->move($teil, $fassung->getPfad());
     }
 
     public function entfernen(Fassung $fassung): void

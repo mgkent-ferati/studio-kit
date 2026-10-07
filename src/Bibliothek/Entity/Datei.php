@@ -82,6 +82,12 @@ class Datei
         return $fassung;
     }
 
+    /** Nimmt eine noch nicht gespeicherte Fassung zurück, etwa wenn das Ablegen der Datei fehlschlug. */
+    public function fassungVerwerfen(Fassung $fassung): void
+    {
+        $this->fassungen->removeElement($fassung);
+    }
+
     public function aktuelleFassung(): ?Fassung
     {
         $aktuelle = null;
