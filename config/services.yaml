@@ -23,6 +23,8 @@ services:
             - '../src/Kernel.php'
             - '../src/*/Entity/'
             - '../src/Bibliothek/DateiInVerwendung.php'
+            - '../src/Musik/MediaInfo.php'
+            - '../src/Musik/MusikUnterlegenFehlgeschlagen.php'
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
@@ -40,3 +42,5 @@ when@test:
                 - '../src/Kernel.php'
                 - '../src/*/Entity/'
                 - '../src/Bibliothek/DateiInVerwendung.php'
+                - '../src/Musik/MediaInfo.php'
+                - '../src/Musik/MusikUnterlegenFehlgeschlagen.php'

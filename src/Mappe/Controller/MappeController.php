@@ -14,6 +14,8 @@ use App\Bibliothek\UploadPruefung;
 use App\Mappe\BestandteilZip;
 use App\Mappe\Entity\Mappe;
 use App\Mappe\Repository\MappeRepository;
+use App\Musik\MusikUnterlegenFehlgeschlagen;
+use App\Musik\MusikUnterleger;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -35,6 +37,7 @@ final class MappeController extends AbstractController
         private readonly DateiManager $dateiManager,
         private readonly UploadPruefung $uploadPruefung,
         private readonly BestandteilZip $bestandteilZip,
+        private readonly MusikUnterleger $musikUnterleger,
         private readonly EntityManagerInterface $em,
     ) {
     }
@@ -50,7 +53,7 @@ final class MappeController extends AbstractController
             'mappen' => $this->mappen->suche(
                 '' === $schlagwort ? null : $schlagwort,
                 match ($vorlageFilter) {
-                    '1' => true, '0' => false, default => null
+                    '1' => true, '0' => false, default => null,
                 },
                 $text,
             ),
@@ -225,6 +228,34 @@ final class MappeController extends AbstractController
         $this->addFlash('erfolg', sprintf('Mappe „%s“ gelöscht.', $name));
 
         return $this->redirectToRoute('mappe_index');
+    }
+
+    #[Route('/mappen/{id}/musik', name: 'mappe_musik_unterlegen', requirements: ['id' => Requirement::DIGITS], methods: ['POST'])]
+    public function musikUnterlegen(Mappe $mappe, Request $request): Response
+    {
+        $this->tokenPruefen($request, 'musik');
+        $payload = $request->getPayload();
+        $id = $payload->getString('audio_id');
+        $audio = Uuid::isValid($id) ? $this->dateien->find($id) : null;
+        if (null === $audio) {
+            $this->addFlash('fehler', 'Bitte einen Audio-Bestandteil wählen.');
+
+            return $this->zurDetailseite($mappe);
+        }
+        try {
+            $fassung = $this->musikUnterleger->unterlegen(
+                $mappe,
+                $audio,
+                (float) $payload->getString('lautstaerke', '1'),
+                (float) $payload->getString('start', '0'),
+                $payload->getBoolean('original'),
+            );
+            $this->addFlash('erfolg', sprintf('Musik unterlegt – Ergebnis Fassung %d.', $fassung->getNummer()));
+        } catch (MusikUnterlegenFehlgeschlagen $e) {
+            $this->addFlash('fehler', $e->getMessage());
+        }
+
+        return $this->zurDetailseite($mappe);
     }
 
     private function zurDetailseite(Mappe $mappe): Response

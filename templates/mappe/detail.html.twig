@@ -39,7 +39,27 @@
             <label><input type="checkbox" name="trotzdem" value="1"> trotzdem anlegen</label>
             <button type="submit">{{ mappe.ergebnis ? 'Neue Fassung hochladen' : 'Ergebnis hochladen' }}</button>
         </form>
-        {% block musik %}{% endblock %}
+        {% block musik %}
+            <h3>Musik unterlegen</h3>
+            {% if mappe.ergebnis is null or mappe.ergebnis.typ.value != 'video' %}
+                <p>Zum Musikunterlegen braucht die Mappe ein Video als Ergebnis.</p>
+            {% elseif audioBestandteile is empty %}
+                <p>Füge zuerst eine Audio-Datei als Bestandteil hinzu.</p>
+            {% else %}
+                <form method="post" action="{{ path('mappe_musik_unterlegen', {id: mappe.id}) }}" class="zeile">
+                    <input type="hidden" name="_token" value="{{ csrf_token('musik') }}">
+                    <select name="audio_id">
+                        {% for audio in audioBestandteile %}
+                            <option value="{{ audio.id }}">{{ audio.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <label>Lautstärke <input type="number" name="lautstaerke" value="1" min="0" max="2" step="0.05"></label>
+                    <label>Start im Song (s) <input type="number" name="start" value="0" min="0" step="0.1"></label>
+                    <label><input type="checkbox" name="original" value="1" checked> Originalton behalten</label>
+                    <button type="submit">Musik unterlegen</button>
+                </form>
+            {% endif %}
+        {% endblock %}
     </section>
 
     <h2>Bestandteile</h2>
