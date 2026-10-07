@@ -1,0 +1,71 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ datei.name }} – studio-kit{% endblock %}
+
+{% block body %}
+    <h1>{{ datei.name }}</h1>
+    <p>{{ datei.typ.label }}{% if datei.vorlage %} <span class="marke">Vorlage</span>{% endif %}</p>
+
+    {% if fassungen is not empty %}
+        {% include '_vorschau.html.twig' with {fassung: fassungen|first} %}
+    {% endif %}
+
+    <h2>Fassungen</h2>
+    <table>
+        {% for fassung in fassungen %}
+            <tr class="fassung{{ loop.first ? ' fassung-aktuell' }}">
+                <td>Fassung {{ fassung.nummer }}</td>
+                <td>{{ fassung.originalname }}</td>
+                <td>{{ (fassung.groesse / 1048576)|number_format(1, ',', '.') }} MB</td>
+                <td>{{ fassung.herkunft.label }}
+                    {% if fassung.quelleAudio %}<br><small>aus Fassung {{ fassung.quelleVideo.nummer ?? '?' }} + „{{ fassung.quelleAudio.datei.name }}“</small>{% endif %}
+                </td>
+                <td>{{ fassung.erstelltAm|date('d.m.Y H:i') }}</td>
+                <td>
+                    {% if fehlend[loop.index0] %}<span class="fehlt">Datei fehlt im Speicher</span>
+                    {% else %}<a href="{{ path('fassung_download', {id: fassung.id}) }}">Herunterladen</a>{% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+
+    <h2>Neue Fassung</h2>
+    <form method="post" action="{{ path('datei_neue_fassung', {id: datei.id}) }}" enctype="multipart/form-data" class="zeile">
+        <input type="hidden" name="_token" value="{{ csrf_token('neue-fassung') }}">
+        <input type="file" name="datei">
+        <label><input type="checkbox" name="trotzdem" value="1"> trotzdem anlegen</label>
+        <button type="submit">Neue Fassung hochladen</button>
+    </form>
+
+    <h2>Bearbeiten</h2>
+    <form method="post" action="{{ path('datei_bearbeiten', {id: datei.id}) }}" class="zeile">
+        <input type="hidden" name="_token" value="{{ csrf_token('datei-bearbeiten') }}">
+        <input name="name" value="{{ datei.name }}" required maxlength="255">
+        <input name="schlagwoerter" value="{{ datei.schlagwoerter|map(s => s.name)|join(', ') }}" placeholder="Schlagwörter, kommagetrennt" size="40">
+        <label><input type="checkbox" name="vorlage" value="1" {{ datei.vorlage ? 'checked' }}> Vorlage</label>
+        <button type="submit">Speichern</button>
+    </form>
+
+    <h2>Verwendet in</h2>
+    {% for mappe in mappen %}
+        {{ mappe.name }}{{ not loop.last ? ', ' }}
+    {% else %}
+        <p>In keiner Mappe.</p>
+    {% endfor %}
+
+    <form method="post" action="{{ path('datei_loeschen', {id: datei.id}) }}" style="margin-top: 2rem">
+        <input type="hidden" name="_token" value="{{ csrf_token('datei-loeschen') }}">
+        <button type="submit" class="gefahr">Datei löschen</button>
+    </form>
+{% endblock %}
+
+{% block scripts %}
+    {% if datei.typ.value == 'rive' %}
+        <script src="https://unpkg.com/@rive-app/canvas@2"></script>
+        <script>
+            document.querySelectorAll('canvas.rive-vorschau').forEach((canvas) => {
+                const r = new rive.Rive({ src: canvas.dataset.src, canvas, autoplay: true, onLoad: () => r.resizeDrawingSurfaceToCanvas() });
+            });
+        </script>
+    {% endif %}
+{% endblock %}

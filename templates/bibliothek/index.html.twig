@@ -1,0 +1,63 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Bibliothek – studio-kit{% endblock %}
+
+{% block body %}
+    <form method="post" action="{{ path('datei_hochladen') }}" enctype="multipart/form-data" class="zeile">
+        <input type="hidden" name="_token" value="{{ csrf_token('hochladen') }}">
+        <label class="ablage" style="flex: 1">
+            Dateien hierher ziehen oder klicken
+            <input type="file" name="dateien[]" multiple>
+            <input type="file" name="dateien[]" hidden>
+        </label>
+        <label><input type="checkbox" name="trotzdem" value="1"> trotzdem anlegen</label>
+        <button type="submit">Hochladen</button>
+    </form>
+
+    <form method="get" class="zeile">
+        <input type="search" name="q" value="{{ filter.q }}" placeholder="Name suchen">
+        <select name="typ">
+            <option value="">Alle Typen</option>
+            {% for typ in typen %}
+                <option value="{{ typ.value }}" {{ filter.typ == typ.value ? 'selected' }}>{{ typ.label }}</option>
+            {% endfor %}
+        </select>
+        <select name="schlagwort">
+            <option value="">Alle Schlagwörter</option>
+            {% for schlagwort in alleSchlagwoerter %}
+                <option value="{{ schlagwort.name }}" {{ filter.schlagwort == schlagwort.name ? 'selected' }}>{{ schlagwort.name }}</option>
+            {% endfor %}
+        </select>
+        <select name="vorlage">
+            <option value="">Vorlage egal</option>
+            <option value="1" {{ filter.vorlage == '1' ? 'selected' }}>nur Vorlagen</option>
+            <option value="0" {{ filter.vorlage == '0' ? 'selected' }}>keine Vorlagen</option>
+        </select>
+        <button type="submit">Filtern</button>
+    </form>
+
+    <div class="raster">
+        {% for datei in dateien %}
+            {% set fassung = datei.aktuelleFassung %}
+            <a class="kachel" href="{{ path('datei_detail', {id: datei.id}) }}">
+                <div class="bild">
+                    {% if datei.typ.value == 'bild' %}
+                        <img src="{{ path('fassung_inhalt', {id: fassung.id}) }}" alt="" loading="lazy">
+                    {% elseif datei.typ.value == 'video' %}
+                        <video src="{{ path('fassung_inhalt', {id: fassung.id}) }}#t=0.1" preload="metadata" muted></video>
+                    {% else %}
+                        {{ {rive: '✦', audio: '♪', photoshop: 'PS'}[datei.typ.value] ?? '📄' }}
+                    {% endif %}
+                </div>
+                <div class="info">
+                    <strong>{{ datei.name }}</strong><br>
+                    {{ datei.typ.label }} · Fassung {{ fassung.nummer }}
+                    {% if datei.vorlage %}<span class="marke">Vorlage</span>{% endif %}
+                    <br>{% for schlagwort in datei.schlagwoerter %}<span class="marke">{{ schlagwort.name }}</span>{% endfor %}
+                </div>
+            </a>
+        {% else %}
+            <p>Noch keine Dateien.</p>
+        {% endfor %}
+    </div>
+{% endblock %}

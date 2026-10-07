@@ -1,0 +1,16 @@
+{# Erwartet: fassung (App\Bibliothek\Entity\Fassung) #}
+{% set typ = fassung.datei.typ.value %}
+{% set url = path('fassung_inhalt', {id: fassung.id}) %}
+<div class="vorschau">
+    {% if typ == 'video' %}
+        <video src="{{ url }}" controls preload="metadata"></video>
+    {% elseif typ == 'audio' %}
+        <audio src="{{ url }}" controls preload="metadata"></audio>
+    {% elseif typ == 'bild' %}
+        <img src="{{ url }}" alt="{{ fassung.datei.name }}">
+    {% elseif typ == 'rive' %}
+        <canvas class="rive-vorschau" data-src="{{ url }}" width="540" height="960"></canvas>
+    {% else %}
+        <p>Keine Vorschau für {{ fassung.datei.typ.label }} – bitte herunterladen.</p>
+    {% endif %}
+</div>
