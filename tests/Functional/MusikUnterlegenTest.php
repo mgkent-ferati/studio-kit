@@ -17,6 +17,8 @@ use App\Musik\MusikUnterleger;
 use App\Tests\Support\StudioKitWebTestCase;
 use App\Tests\Support\TestMedia;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\DomCrawler\Field\ChoiceFormField;
+use Symfony\Component\DomCrawler\Form;
 use Symfony\Component\HttpFoundation\File\File;
 
 final class MusikUnterlegenTest extends StudioKitWebTestCase
@@ -103,7 +105,7 @@ final class MusikUnterlegenTest extends StudioKitWebTestCase
         $mappe = $this->mappeMit(TestMedia::video(2.0, true, 'libx264'));
         $fremd = self::service(DateiManager::class)->hochladen(new File(TestMedia::audio(4.0)), 'fremd.mp3');
         $form = $this->client->request('GET', '/mappen/'.$mappe->getId())->selectButton('Musik unterlegen')->form();
-        $form['audio_id']->disableValidation();
+        $this->selectField($form, 'audio_id')->disableValidation();
         $form['audio_id'] = (string) $fremd->getId();
 
         $this->client->submit($form);
@@ -130,7 +132,7 @@ final class MusikUnterlegenTest extends StudioKitWebTestCase
         $mappe->bestandteilHinzufuegen($kaputt);
         self::service(EntityManagerInterface::class)->flush();
         $form = $this->client->request('GET', '/mappen/'.$mappe->getId())->selectButton('Musik unterlegen')->form();
-        $form['audio_id']->select((string) $kaputt->getId());
+        $form['audio_id'] = (string) $kaputt->getId();
         $vorher = glob(sys_get_temp_dir().'/musik*') ?: [];
 
         $this->client->submit($form);
@@ -138,6 +140,14 @@ final class MusikUnterlegenTest extends StudioKitWebTestCase
         self::assertNotEmpty(array_filter($this->flashes(), static fn (string $f): bool => str_contains($f, 'ffmpeg ist fehlgeschlagen')));
         self::assertSame($vorher, glob(sys_get_temp_dir().'/musik*') ?: []);
         self::assertSame(1, $this->ergebnis($mappe)->aktuelleFassung()?->getNummer());
+    }
+
+    private function selectField(Form $form, string $name): ChoiceFormField
+    {
+        $field = $form->get($name);
+        self::assertInstanceOf(ChoiceFormField::class, $field);
+
+        return $field;
     }
 
     private function mappeMit(string $video): Mappe
