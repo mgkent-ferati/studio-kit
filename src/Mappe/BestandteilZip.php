@@ -31,21 +31,35 @@ final readonly class BestandteilZip
         if (false === $ziel) {
             throw new \RuntimeException('Temporäre Datei für das ZIP ließ sich nicht anlegen.');
         }
-        $zip = new \ZipArchive();
-        if (true !== $zip->open($ziel, \ZipArchive::OVERWRITE)) {
-            throw new \RuntimeException('ZIP ließ sich nicht anlegen.');
-        }
-        foreach ($fassungen as $index => $fassung) {
-            $pfad = $this->storage->absolutePath($fassung);
-            if (!is_file($pfad)) {
-                $zip->close();
-                unlink($ziel);
-                throw new \RuntimeException(sprintf('„%s“ fehlt im Speicher.', $fassung->getDatei()->getName()));
+        try {
+            $zip = new \ZipArchive();
+            if (true !== $zip->open($ziel, \ZipArchive::OVERWRITE)) {
+                throw new \RuntimeException('ZIP ließ sich nicht anlegen.');
             }
-            $zip->addFile($pfad, $namen[$index]);
-            $zip->setCompressionName($namen[$index], \ZipArchive::CM_STORE);
+            foreach ($fassungen as $index => $fassung) {
+                $pfad = $this->storage->absolutePath($fassung);
+                if (!is_file($pfad)) {
+                    $zip->close();
+
+                    throw new \RuntimeException(sprintf('„%s“ fehlt im Speicher.', $fassung->getDatei()->getName()));
+                }
+                if (!$zip->addFile($pfad, $namen[$index])) {
+                    $zip->close();
+
+                    throw new \RuntimeException(sprintf('„%s“ ließ sich nicht ins ZIP aufnehmen.', $fassung->getDatei()->getName()));
+                }
+                $zip->setCompressionName($namen[$index], \ZipArchive::CM_STORE);
+            }
+            if (!$zip->close()) {
+                throw new \RuntimeException('ZIP ließ sich nicht schreiben.');
+            }
+        } catch (\Throwable $e) {
+            if (is_file($ziel)) {
+                unlink($ziel);
+            }
+
+            throw $e;
         }
-        $zip->close();
 
         return $ziel;
     }

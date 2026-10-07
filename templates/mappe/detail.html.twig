@@ -14,6 +14,22 @@
                 <a href="{{ path('fassung_download', {id: aktuell.id}) }}">Herunterladen</a> ·
                 <a href="{{ path('datei_detail', {id: mappe.ergebnis.id}) }}">alle Fassungen</a></p>
             {% include '_vorschau.html.twig' with {fassung: aktuell} %}
+            {% if ergebnisFassungen|length > 1 %}
+                <details class="aeltere-fassungen">
+                    <summary>Ältere Fassungen ({{ ergebnisFassungen|length - 1 }})</summary>
+                    <table>
+                        {% for fassung in ergebnisFassungen|slice(1) %}
+                            <tr class="aeltere-fassung">
+                                <td>Fassung {{ fassung.nummer }}</td>
+                                <td>{{ fassung.originalname }}</td>
+                                <td>{{ fassung.herkunft.label }}</td>
+                                <td>{{ fassung.erstelltAm|date('d.m.Y H:i') }}</td>
+                                <td><a href="{{ path('fassung_download', {id: fassung.id}) }}">Herunterladen</a></td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                </details>
+            {% endif %}
         {% else %}
             <p>Noch kein Ergebnis.</p>
         {% endif %}
@@ -21,7 +37,7 @@
             <input type="hidden" name="_token" value="{{ csrf_token('ergebnis') }}">
             <input type="file" name="datei">
             <label><input type="checkbox" name="trotzdem" value="1"> trotzdem anlegen</label>
-            <button type="submit">Ergebnis hochladen</button>
+            <button type="submit">{{ mappe.ergebnis ? 'Neue Fassung hochladen' : 'Ergebnis hochladen' }}</button>
         </form>
         {% block musik %}{% endblock %}
     </section>

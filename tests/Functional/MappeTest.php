@@ -6,6 +6,7 @@ namespace App\Tests\Functional;
 
 use App\Bibliothek\DateiManager;
 use App\Bibliothek\Entity\Datei;
+use App\Bibliothek\FassungStorage;
 use App\Mappe\Entity\Mappe;
 use App\Mappe\Repository\MappeRepository;
 use App\Tests\Support\StudioKitWebTestCase;
@@ -48,12 +49,14 @@ final class MappeTest extends StudioKitWebTestCase
     {
         $mappe = $this->mappe('Oktober');
         foreach ([1.0, 1.5] as $sekunden) {
-            $form = $this->client->request('GET', '/mappen/'.$mappe->getId())->selectButton('Ergebnis hochladen')->form();
+            $form = $this->client->request('GET', '/mappen/'.$mappe->getId())->selectButton(1.0 === $sekunden ? 'Ergebnis hochladen' : 'Neue Fassung hochladen')->form();
             $this->fileField($form, 'datei')->upload(TestMedia::video($sekunden));
             $this->client->submit($form);
         }
 
         self::assertSelectorTextContains('.ergebnis', 'Fassung 2');
+        self::assertSelectorTextContains('details.aeltere-fassungen summary', 'Ältere Fassungen (1)');
+        self::assertSelectorTextContains('details.aeltere-fassungen .aeltere-fassung', 'Fassung 1');
         $ergebnis = self::service(MappeRepository::class)->find($mappe->getId())?->getErgebnis();
         self::assertSame('Oktober', $ergebnis?->getName());
     }
@@ -93,6 +96,23 @@ final class MappeTest extends StudioKitWebTestCase
         $this->client->request('GET', '/mappen/'.$mappe->getId().'/zip');
 
         self::assertContains('Die Mappe hat keine Bestandteile.', $this->flashes());
+    }
+
+    public function testZipRaeumtTempDateiAufWennSpeicherDateiFehlt(): void
+    {
+        $mappe = $this->mappe('Defekt');
+        $datei = $this->datei(TestMedia::bild(), 'logo.png');
+        $mappe->bestandteilHinzufuegen($datei);
+        self::service(EntityManagerInterface::class)->flush();
+        $fassung = $datei->aktuelleFassung();
+        self::assertNotNull($fassung);
+        unlink(self::service(FassungStorage::class)->absolutePath($fassung));
+        $vorher = glob(sys_get_temp_dir().'/mappe*') ?: [];
+
+        $this->client->request('GET', '/mappen/'.$mappe->getId().'/zip');
+
+        self::assertContains('„logo“ fehlt im Speicher.', $this->flashes());
+        self::assertSame($vorher, glob(sys_get_temp_dir().'/mappe*') ?: []);
     }
 
     public function testVerschiebenUndEntfernen(): void
