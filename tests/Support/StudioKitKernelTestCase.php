@@ -20,4 +20,19 @@ abstract class StudioKitKernelTestCase extends KernelTestCase
         }
         (new Filesystem())->remove(self::TEST_ABLAGE);
     }
+
+    /**
+     * @template T of object
+     *
+     * @param class-string<T> $id
+     *
+     * @return T
+     */
+    protected static function service(string $id): object
+    {
+        $service = self::getContainer()->get($id);
+        self::assertInstanceOf($id, $service);
+
+        return $service;
+    }
 }

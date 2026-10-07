@@ -22,6 +22,21 @@ services:
         exclude:
             - '../src/Kernel.php'
             - '../src/*/Entity/'
+            - '../src/Bibliothek/DateiInVerwendung.php'
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+
+when@test:
+    services:
+        # Integrationstests holen Services direkt aus dem Container; ungenutzte private Services würden entfernt.
+        _defaults:
+            autowire: true
+            autoconfigure: true
+            public: true
+        App\:
+            resource: '../src/'
+            exclude:
+                - '../src/Kernel.php'
+                - '../src/*/Entity/'
+                - '../src/Bibliothek/DateiInVerwendung.php'

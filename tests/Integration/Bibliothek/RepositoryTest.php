@@ -99,21 +99,6 @@ final class RepositoryTest extends StudioKitKernelTestCase
         self::assertSame([$mitErgebnis, $mitBestandteil], $mappen);
     }
 
-    /**
-     * @template T of object
-     *
-     * @param class-string<T> $id
-     *
-     * @return T
-     */
-    private static function service(string $id): object
-    {
-        $service = self::getContainer()->get($id);
-        self::assertInstanceOf($id, $service);
-
-        return $service;
-    }
-
     private function datei(string $name, DateiTyp $typ): Datei
     {
         $datei = new Datei($name, $typ);
