@@ -67,12 +67,18 @@ class Mappe
         $this->geaendertAm = new \DateTimeImmutable();
     }
 
+    private function beruehren(): void
+    {
+        $this->geaendertAm = new \DateTimeImmutable();
+    }
+
     public function bestandteilHinzufuegen(Datei $datei): void
     {
         if (null !== $this->bestandteilFuer($datei)) {
             return;
         }
         $this->bestandteile->add(new MappeBestandteil($this, $datei, $this->bestandteile->count() + 1));
+        $this->beruehren();
     }
 
     public function bestandteilEntfernen(Datei $datei): void
@@ -83,6 +89,7 @@ class Mappe
         }
         $this->bestandteile->removeElement($bestandteil);
         $this->neuNummerieren($this->getBestandteile());
+        $this->beruehren();
     }
 
     /** @param int $richtung -1 = nach oben, +1 = nach unten */
@@ -99,6 +106,7 @@ class Mappe
             }
             [$liste[$index], $liste[$ziel]] = [$liste[$ziel], $liste[$index]];
             $this->neuNummerieren($liste);
+            $this->beruehren();
 
             return;
         }
@@ -186,10 +194,14 @@ class Mappe
     /** @param list<Schlagwort> $schlagwoerter */
     public function setSchlagwoerter(array $schlagwoerter): void
     {
+        if ($schlagwoerter === $this->getSchlagwoerter()) {
+            return;
+        }
         $this->schlagwoerter->clear();
         foreach ($schlagwoerter as $schlagwort) {
             $this->schlagwoerter->add($schlagwort);
         }
+        $this->beruehren();
     }
 
     public function getErstelltAm(): \DateTimeImmutable
