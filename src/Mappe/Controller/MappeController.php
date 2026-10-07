@@ -50,7 +50,7 @@ final class MappeController extends AbstractController
             'mappen' => $this->mappen->suche(
                 '' === $schlagwort ? null : $schlagwort,
                 match ($vorlageFilter) {
-                    '1' => true, '0' => false, default => null
+                    '1' => true, '0' => false, default => null,
                 },
                 $text,
             ),
